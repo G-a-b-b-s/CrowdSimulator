@@ -1,23 +1,22 @@
 import pygame
 import random
+from param_choice import ParamsChoice
+from crowd_model import CrowdModel
 from statistics import *
 
 
 class SimulationVisualization:
 
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
+        self.model = None
         self.grid_size = 20
         self.cell_size = 500 // self.grid_size
+        self.agent_colors = {}
 
         pygame.init()
         self.screen = pygame.display.set_mode((500, 500))
         pygame.display.set_caption("Crowd Simulation")
         self.clock = pygame.time.Clock()
-
-        self.agent_colors = {}
-        for agent in self.model.schedule.agents:
-            self.agent_colors[agent.unique_id] = (0, 128, 0)
 
     def draw_grid(self):
         for x in range(self.grid_size):
@@ -45,6 +44,12 @@ class SimulationVisualization:
             pygame.draw.rect(self.screen, color, (obj.pos[0] * self.cell_size, obj.pos[1] * self.cell_size,
                                                   self.cell_size, self.cell_size))
 
+    def draw_obstacles(self):
+        for obj in self.model.obstacles:
+            color = (128, 128, 128)
+            pygame.draw.rect(self.screen, color, (obj.pos[0] * self.cell_size, obj.pos[1] * self.cell_size,
+                                                  self.cell_size, self.cell_size))
+
     def draw_button(self, text, rect, color):
         pygame.draw.rect(self.screen, color, rect)
         font = pygame.font.Font(None, 36)
@@ -64,10 +69,10 @@ class SimulationVisualization:
             self.screen.blit(logo_image, (logo_rect.x, logo_rect.y))
 
             walk_button_rect = pygame.Rect(150, 200, 200, 50)
-            bomb_button_rect = pygame.Rect(150, 300, 200, 50)
+            evac_button_rect = pygame.Rect(150, 300, 200, 50)
 
             self.draw_button("Walking", walk_button_rect, (128, 238, 128))
-            self.draw_button("Bomb", bomb_button_rect, (240, 128, 128))
+            self.draw_button("Evacuation", evac_button_rect, (240, 128, 128))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -75,22 +80,32 @@ class SimulationVisualization:
                     return None
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if walk_button_rect.collidepoint(event.pos):
-                        return "walking"
-                    if bomb_button_rect.collidepoint(event.pos):
-                        return "bomb"
+                        return "Walking"
+                    if evac_button_rect.collidepoint(event.pos):
+                        return "Evacuation"
 
             pygame.display.flip()
             self.clock.tick(60)
 
     def run(self):
         scenario = self.menu()
-        if scenario == "walking":
+        if scenario == "Walking":
             self.run_walking_scenario()
-        elif scenario == "bomb":
-            self.run_bomb_scenario()
+        elif scenario == "Evacuation":
+            self.run_evac_scenario()
 
     def run_walking_scenario(self):
         running = True
+
+        params = ParamsChoice()
+
+        self.model = CrowdModel(f'presets/{params.menu()}')
+        self.screen = pygame.display.set_mode((500, 500))
+        pygame.display.flip()
+
+        for agent in self.model.schedule.agents:
+            self.agent_colors[agent.unique_id] = (0, 128, 0)
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -100,11 +115,14 @@ class SimulationVisualization:
             self.draw_grid()
             self.draw_objectives()
             self.draw_agents()
+            self.draw_obstacles()
             pygame.display.flip()
             self.clock.tick(30)
             self.model.step()
 
-            if random.randint(1, 6) >= 5:
+
+            # Ważne, procentowo szansa na zrespienie agenta z każdym tickiem
+            if random.randint(1, 20) >= 17:
                 self.model.spawn_agent()
 
             if all(not agent.has_moved for agent in self.model.schedule.agents):
@@ -117,7 +135,8 @@ class SimulationVisualization:
         stats = Statistics()
         stats.plot_space_frequency(self.model.visited_counts, self.model.grid.width, self.model.grid.height)
 
-
-    def run_bomb_scenario(self):
-        print("Bomb scenario not yet implemented.")
+    # jeszcze static
+    @staticmethod
+    def run_evac_scenario(self):
+        print("Evacuation scenario not yet implemented.")
         pygame.quit()

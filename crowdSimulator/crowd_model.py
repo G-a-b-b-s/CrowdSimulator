@@ -1,22 +1,55 @@
 import mesa
-from agent import CrowdAgent, Destination
+import json
+from agent import *
 
 
 class CrowdModel(mesa.Model):
 
-    def __init__(self, ag, ds, width=20, height=20):
+    def __init__(self, config_file_path):
         super().__init__()
-        self.num_agents = ag
-        self.num_destinations = ds
-        self.grid = mesa.space.SingleGrid(width, height, False)
+
+        with open(config_file_path, 'r') as f:
+            params = json.load(f)
+
+        self.params = params
+        self.num_agents = params.get("num_agents", 10)
+        self.num_destinations = params.get("num_objectives", 3)
+        self.grid_width = params.get("grid_width", 20)
+        self.grid_height = params.get("grid_height", 20)
+        self.randomize_obstacles = params.get("randomize_obstacles", False)
+        self.randomize_objectives = params.get("randomize_objectives", False)
+        self.obstacles = []
+        self.destinations = []
+
+        self.grid = mesa.space.SingleGrid(self.grid_width, self.grid_height, False)
         self.schedule = mesa.time.SimultaneousActivation(self)
-        self.destinations = set()
         self.visited_counts = {}
 
+        self.setup_obstacles()
         self.generate_unique_destinations()
+        self.generate_agents()
 
+    def load_obstacles(self, obstacle_data):
+        obstacles = []
+        for i, data in enumerate(obstacle_data):
+            pos = tuple(data["position"])
+            obstacle = Obstacle(i, self, pos)
+            obstacles.append(obstacle)
+        return obstacles
+
+    def load_destinations(self, destination_data):
+        destinations = []
+        for i, data in enumerate(destination_data):
+            pos = tuple(data["position"])
+            preset = data["preset"]
+            color = tuple(data["color"])
+            destination = Destination(pos, preset, color)
+            destinations.append(destination)
+        return destinations
+
+    def generate_agents(self):
         for i in range(self.num_agents):
-            a = CrowdAgent(i, self)
+            a = CrowdAgent(len(self.schedule.agents), self)
             self.schedule.add(a)
 
             while True:
@@ -28,24 +61,44 @@ class CrowdModel(mesa.Model):
                     break
         self.assign_destinations()
 
-    def generate_unique_destinations(self):
+    def setup_obstacles(self):
+        if self.randomize_obstacles:
+            num_obstacles = len(self.obstacles) or 10
+            for _ in range(num_obstacles):
+                x = self.random.randrange(self.grid.width)
+                y = self.random.randrange(self.grid.height)
+                if self.grid.is_cell_empty((x, y)):
+                    obstacle = Obstacle(len(self.agents), self, (x, y))
+                    self.obstacles.append(obstacle)
+        else:
+            self.obstacles = self.load_obstacles(self.params.get("obstacles", []))
 
-        for _ in range(self.num_destinations):
-            dest_x = self.random.randrange(self.grid.width - 1)
-            dest_y = self.random.randrange(self.grid.height - 1)
-            destination = (dest_x, dest_y)
-            color = (0, 0, 128)
-            objective = Destination(destination, 'exit', color)
-            self.destinations.add(objective)
+        self.generate_obstacles()
+
+    def generate_obstacles(self):
+        for obstacle in self.obstacles:
+            x, y = obstacle.pos
+            if self.grid.is_cell_empty((x, y)):
+                self.grid.move_agent(obstacle, (x, y))
+
+    def generate_unique_destinations(self):
+        if self.randomize_objectives:
+            for _ in range(self.num_destinations):
+                dest_x = self.random.randrange(self.grid.width)
+                dest_y = self.random.randrange(self.grid.height)
+                destination = Destination((dest_x, dest_y), 'exit', (0, 0, 128))
+                self.destinations.append(destination)
+        else:
+            self.destinations = self.load_destinations(self.params.get("objectives", []))
 
     def assign_destinations(self):
-        for agent in self.agents:
-            destination = self.random.choice(list(self.destinations))
+        for agent in self.schedule.agents:
+            destination = self.random.choice(self.destinations)
             agent.destination = destination
 
     def spawn_agent(self):
         if len(self.schedule.agents) < self.num_agents + 10:
-            destination = self.random.choice(list(self.destinations))
+            destination = self.random.choice(self.destinations)
 
             new_agent_id = len(self.schedule.agents)
             new_agent = CrowdAgent(new_agent_id, self)
@@ -71,10 +124,7 @@ class CrowdModel(mesa.Model):
                         new_agent.pos = (x, y)
                         break
 
-            new_agent.destination = self.random.choice(list(self.destinations))
+            new_agent.destination = self.random.choice(self.destinations)
 
     def step(self):
         self.schedule.step()
-
-
-
