@@ -1,3 +1,5 @@
+import os
+
 import pygame
 import random
 from param_choice import ParamsChoice
@@ -61,7 +63,8 @@ class SimulationVisualization:
         running = True
 
         logo_rect = pygame.Rect(100, 50, 300, 100)
-        logo_image = pygame.image.load("assets/title.png")
+        logo_path = 'assets/title.png'
+        logo_image = pygame.image.load(logo_path)
         logo_image = pygame.transform.scale(logo_image, (logo_rect.width, logo_rect.height))
 
         while running:
@@ -98,8 +101,8 @@ class SimulationVisualization:
         running = True
 
         params = ParamsChoice()
-
-        self.model = CrowdModel(f'presets/{params.menu()}')
+        directory = f"presets/{params.menu()}"
+        self.model = CrowdModel(directory)
         self.screen = pygame.display.set_mode((500, 500))
         pygame.display.flip()
 

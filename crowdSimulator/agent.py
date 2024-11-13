@@ -122,5 +122,3 @@ class Destination:
         self.color = color
         self.preset = preset
         self.pos = pos
-
-
