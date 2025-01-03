@@ -5,7 +5,7 @@ from agent import *
 
 class CrowdModel(mesa.Model):
 
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path, scenario):
         super().__init__()
 
         with open(config_file_path, 'r') as f:
@@ -20,6 +20,7 @@ class CrowdModel(mesa.Model):
         self.randomize_objectives = params.get("randomize_objectives", False)
         self.obstacles = []
         self.destinations = []
+        self.scenario = scenario
 
         self.grid = mesa.space.SingleGrid(self.grid_width, self.grid_height, False)
         self.schedule = mesa.time.SimultaneousActivation(self)
@@ -49,7 +50,7 @@ class CrowdModel(mesa.Model):
 
     def generate_agents(self):
         for i in range(self.num_agents):
-            a = CrowdAgent(len(self.schedule.agents), self)
+            a = CrowdAgent(len(self.schedule.agents), self, self.scenario)
             self.schedule.add(a)
 
             while True:
@@ -101,7 +102,7 @@ class CrowdModel(mesa.Model):
             destination = self.random.choice(self.destinations)
 
             new_agent_id = len(self.schedule.agents)
-            new_agent = CrowdAgent(new_agent_id, self)
+            new_agent = CrowdAgent(new_agent_id, self, self.scenario)
             self.schedule.add(new_agent)
 
             dest_x, dest_y = destination.pos

@@ -1,19 +1,22 @@
+import time
+
 from mesa import Agent
 import random
 import math
 
 
 class CrowdAgent(Agent):
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model, scenario):
         super().__init__(unique_id, model)
         self.steps = 0
-        self.velocity = 1
+        self.velocity = 0.02
         self.destination = Destination((0, 0), 'no', (0, 0, 0))
         self.personal_space_radius = 2
         self.visited_positions = []
         self.memory_limit = 4
         self.has_moved = False
         self.reached_destination = False
+        self.scenario = scenario
 
     def is_finished(self, x, y):
         if abs(x - self.destination.pos[0]) + abs(y - self.destination.pos[1]) < 1:
@@ -32,6 +35,10 @@ class CrowdAgent(Agent):
             self.has_moved = True
         else:
             self.has_moved = False
+
+        self.steps += 1
+
+        time.sleep(0.05) if self.scenario == "Walking" else time.sleep(0.015)
 
     @staticmethod
     def calculate_distance(pos1, pos2):
@@ -97,22 +104,30 @@ class CrowdAgent(Agent):
                 return True
         return False
 
+    def calculate_wall_distance(self, pos):
+        walls = [(x, y) for x in range(self.model.grid.width) for y in range(self.model.grid.height)
+                 if not self.model.grid.is_cell_empty((x, y))]
+
+        return min([self.calculate_distance(pos, wall) for wall in walls])
+
     def escape_wall(self):
-        # Escape directions as potential options
         escape_directions = [
             (self.pos[0] + 1, self.pos[1]),  # right
             (self.pos[0] - 1, self.pos[1]),  # left
             (self.pos[0], self.pos[1] + 1),  # up
             (self.pos[0], self.pos[1] - 1)  # down
         ]
-        random.shuffle(escape_directions)  # Randomize escape directions to avoid looping
 
-        # Try to move to a random valid escape position
-        for new_pos in escape_directions:
-            if self.is_position_valid(new_pos) and new_pos not in self.visited_positions:
+        # Rank directions by distance from walls
+        valid_positions = [(pos, self.calculate_wall_distance(pos)) for pos in escape_directions if
+                           self.is_position_valid(pos)]
+        valid_positions.sort(key=lambda x: x[1], reverse=True)  # Prioritize positions further from walls
+
+        for new_pos, _ in valid_positions:
+            if new_pos not in self.visited_positions:
                 self.model.grid.move_agent(self, new_pos)
                 self.update_visited_positions(new_pos)
-                break
+                return
 
     def get_next_position(self, dx, dy):
         if abs(dx) > abs(dy):

@@ -28,7 +28,7 @@ class SimulationVisualization:
 
     def draw_agents(self):
         for agent in self.model.schedule.agents:
-            color = (0, 128, 0)
+            color = (95, 158, 160)
             pygame.draw.circle(self.screen, color, (agent.pos[0] * self.cell_size + self.cell_size // 2,
                                                     agent.pos[1] * self.cell_size + self.cell_size // 2),
                                self.cell_size // 3)
@@ -92,22 +92,19 @@ class SimulationVisualization:
 
     def run(self):
         scenario = self.menu()
-        if scenario == "Walking":
-            self.run_walking_scenario()
-        elif scenario == "Evacuation":
-            self.run_evac_scenario()
+        self.run_scenario(scenario)
 
-    def run_walking_scenario(self):
+    def run_scenario(self, scenario):
         running = True
 
         params = ParamsChoice()
         directory = f"presets/{params.menu()}"
-        self.model = CrowdModel(directory)
+        self.model = CrowdModel(directory, scenario)
         self.screen = pygame.display.set_mode((500, 500))
         pygame.display.flip()
 
         for agent in self.model.schedule.agents:
-            self.agent_colors[agent.unique_id] = (0, 128, 0)
+            self.agent_colors[agent.unique_id] = (0,150,255)
 
         while running:
             for event in pygame.event.get():
@@ -138,8 +135,3 @@ class SimulationVisualization:
         stats = Statistics()
         stats.plot_space_frequency(self.model.visited_counts, self.model.grid.width, self.model.grid.height)
 
-    # jeszcze static
-    @staticmethod
-    def run_evac_scenario(self):
-        print("Evacuation scenario not yet implemented.")
-        pygame.quit()
