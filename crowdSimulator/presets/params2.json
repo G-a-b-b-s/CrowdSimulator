@@ -1,5 +1,5 @@
 {
-  "num_agents": 15,
+  "num_agents": 10,
   "num_objectives": 4,
   "objectives": [
     {"position": [0, 0], "preset": "exit", "color": [0, 0, 128]},
