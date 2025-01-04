@@ -144,6 +144,11 @@ class CrowdAgent(Agent):
         if len(self.visited_positions) > self.memory_limit:
             self.visited_positions.pop(0)
 
+        if new_pos in self.model.visited_counts:
+            self.model.visited_counts[new_pos] += 1
+        else:
+            self.model.visited_counts[new_pos] = 1
+
 
 class Obstacle(Agent):
     def __init__(self, unique_id, model, pos):
