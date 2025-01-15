@@ -9,6 +9,7 @@ class CrowdAgent(Agent):
     def __init__(self, unique_id, model, scenario):
         super().__init__(unique_id, model)
         self.steps = 0
+        self.collision_attempts = 0
         self.velocity = 0.02
         self.destination = Destination((0, 0), 'no', (0, 0, 0))
         self.personal_space_radius = 2
@@ -61,11 +62,17 @@ class CrowdAgent(Agent):
         dx, dy = goal_pos[0] - self.pos[0], goal_pos[1] - self.pos[1]
         new_pos = self.get_next_position(dx, dy)
 
-        if self.is_position_valid(new_pos):
-            self.model.grid.move_agent(self, new_pos)
-            self.update_visited_positions(new_pos)
-            return True
-        return False
+        if not self.is_position_valid(new_pos):
+            self.collision_attempts += 1
+            if new_pos in self.model.collision_count:
+                self.model.collision_count[new_pos] += 1
+            else:
+                self.model.collision_count[new_pos] = 1
+            return False
+
+        self.model.grid.move_agent(self, new_pos)
+        self.update_visited_positions(new_pos)
+        return True
 
     def avoid_intruders(self, intruders, goal_pos):
         directions = {

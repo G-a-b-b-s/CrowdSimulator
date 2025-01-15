@@ -25,6 +25,8 @@ class CrowdModel(mesa.Model):
         self.grid = mesa.space.SingleGrid(self.grid_width, self.grid_height, False)
         self.schedule = mesa.time.SimultaneousActivation(self)
         self.visited_counts = {}
+        self.collision_count = {}
+        self.collision_history = []
 
         self.setup_obstacles()
         self.generate_unique_destinations()
@@ -129,3 +131,6 @@ class CrowdModel(mesa.Model):
 
     def step(self):
         self.schedule.step()
+
+        total_collisions = sum(self.collision_count.values())
+        self.collision_history.append(total_collisions)

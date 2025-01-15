@@ -5,7 +5,8 @@ import random
 from param_choice import ParamsChoice
 from crowd_model import CrowdModel
 from statistics import *
-
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import io
 
 class SimulationVisualization:
 
@@ -14,6 +15,8 @@ class SimulationVisualization:
         self.grid_size = 20
         self.cell_size = 500 // self.grid_size
         self.agent_colors = {}
+        self.plots = []
+        self.current_plot_index = 0
 
         pygame.init()
         self.screen = pygame.display.set_mode((500, 500))
@@ -130,8 +133,57 @@ class SimulationVisualization:
                     print(agent.reached_destination)
                 running = False
 
+        self.show_statistics_in_pygame()
+
         pygame.quit()
 
+    def show_statistics_in_pygame(self):
         stats = Statistics()
-        stats.plot_space_frequency(self.model.visited_counts, self.model.grid.width, self.model.grid.height)
 
+        fig1 = stats.plot_space_frequency(self.model.visited_counts, self.model.grid.width,
+                                                     self.model.grid.height)
+        fig2 = stats.plot_collision_history(self.model.collision_history)
+
+        self.add_plot(fig1)
+        self.add_plot(fig2)
+
+        self.show_plots()
+
+    def figure_to_surface(self, fig):
+
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        width, height = canvas.get_width_height()
+        buf = canvas.buffer_rgba()
+        surface = pygame.image.frombuffer(buf, (width, height), "RGBA")
+
+        return surface
+
+    def add_plot(self, fig):
+        surface = self.figure_to_surface(fig)
+        self.plots.append(surface)
+
+    def show_plots(self):
+        running = True
+
+        while running:
+            self.screen.fill((255, 255, 255))
+
+            if self.plots:
+                plot_surface = self.plots[self.current_plot_index]
+                plot_rect = plot_surface.get_rect(center=(250, 250))
+                self.screen.blit(plot_surface, plot_rect.topleft)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RIGHT:
+                        self.current_plot_index = (self.current_plot_index + 1) % len(self.plots)
+                    if event.key == pygame.K_LEFT:
+                        self.current_plot_index = (self.current_plot_index - 1) % len(self.plots)
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
+        pygame.quit()

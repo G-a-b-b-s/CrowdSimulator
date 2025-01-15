@@ -11,11 +11,23 @@ class Statistics:
         for (x, y), count in visited_counts.items():
             visit_density[x, y] = count
 
-        plt.figure(figsize=(10, 8))
-        plt.imshow(visit_density.T, interpolation='nearest')
-        plt.colorbar(label='Częstość odwiedzin')
-        plt.title('Mapa gęstości odwiedzin danego pola przez agentów')
-        plt.xlabel('Oś X siatki')
-        plt.ylabel('Oś Y siatki')
-        plt.show()
+        fig, ax = plt.subplots(figsize=(5, 4))
+        cax = ax.imshow(visit_density.T, interpolation='nearest', cmap='viridis')
+        fig.colorbar(cax, label='Częstość odwiedzin')
+        ax.set_title('Mapa gęstości odwiedzin danego pola przez agentów')
+        ax.set_xlabel('Oś X siatki')
+        ax.set_ylabel('Oś Y siatki')
 
+        return fig
+
+    @staticmethod
+    def plot_collision_history(collision_history):
+        fig, ax = plt.subplots(figsize=(5, 4))
+        ax.plot(collision_history, label="Kolizje w czasie", color="red")
+        ax.set_xlabel("Krok symulacji")
+        ax.set_ylabel("Liczba prób kolizji")
+        ax.set_title("Historia kolizji w czasie")
+        ax.legend()
+        ax.grid(True)
+
+        return fig
