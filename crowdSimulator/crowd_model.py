@@ -27,6 +27,7 @@ class CrowdModel(mesa.Model):
         self.visited_counts = {}
         self.collision_count = {}
         self.collision_history = []
+        self.intruders_history = {"intimate": [], "personal": [], "social": []}
 
         self.setup_obstacles()
         self.generate_unique_destinations()
@@ -128,6 +129,28 @@ class CrowdModel(mesa.Model):
                         break
 
             new_agent.destination = self.random.choice(self.destinations)
+
+    def count_intruders(self):
+        zones = {
+            "intimate": 2,
+            "personal": 5,
+            "social": 8
+        }
+
+        zone_counts = {zone: 0 for zone in zones}
+
+        for agent in self.schedule.agents:
+            for other_agent in self.schedule.agents:
+                if agent != other_agent:
+                    distance = ((agent.pos[0] - other_agent.pos[0]) ** 2 +
+                                (agent.pos[1] - other_agent.pos[1]) ** 2) ** 0.5
+                    for zone, radius in zones.items():
+                        if distance <= radius:
+                            zone_counts[zone] += 1
+                            break
+
+        for zone in zones:
+            self.intruders_history[zone].append(zone_counts[zone])
 
     def step(self):
         self.schedule.step()

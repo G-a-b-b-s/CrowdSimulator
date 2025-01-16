@@ -122,6 +122,7 @@ class SimulationVisualization:
             pygame.display.flip()
             self.clock.tick(30)
             self.model.step()
+            self.model.count_intruders()
 
 
             # Ważne, procentowo szansa na zrespienie agenta z każdym tickiem
@@ -143,9 +144,10 @@ class SimulationVisualization:
         fig1 = stats.plot_space_frequency(self.model.visited_counts, self.model.grid.width,
                                                      self.model.grid.height)
         fig2 = stats.plot_collision_history(self.model.collision_history)
-
+        fig3 = stats.plot_intruders_by_zone(self.model.intruders_history)
         self.add_plot(fig1)
         self.add_plot(fig2)
+        self.add_plot(fig3)
 
         self.show_plots()
 

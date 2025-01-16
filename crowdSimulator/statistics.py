@@ -31,3 +31,18 @@ class Statistics:
         ax.grid(True)
 
         return fig
+
+    @staticmethod
+    def plot_intruders_by_zone(intruders_history):
+        fig, ax = plt.subplots(figsize=(5, 4))
+
+        for zone, history in intruders_history.items():
+            ax.plot(history, label=f"Strefa {zone.capitalize()}", linewidth=2)
+
+        ax.set_title("Liczba intruzów w różnych strefach społecznych w czasie")
+        ax.set_xlabel("Kroki symulacji")
+        ax.set_ylabel("Liczba intruzów")
+        ax.legend()
+        ax.grid(True)
+
+        return fig
